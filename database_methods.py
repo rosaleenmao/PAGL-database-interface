@@ -1,6 +1,6 @@
 # ensures arguments are passed in correctly
-def check_arguments(cat):
-    print(cat)
+def check_arguments(argv):
+    print(argv)
 
 
 # ensures that csv fields are formatted correctly

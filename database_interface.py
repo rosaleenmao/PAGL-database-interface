@@ -7,6 +7,7 @@ import mysql.connector
 import sys
 
 # total arguments
+database_methods.check_arguments(sys.argv)
 n = len(sys.argv)
 print("Total arguments passed:", n)
 
