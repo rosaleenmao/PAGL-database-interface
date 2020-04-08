@@ -6,19 +6,8 @@ import mysql.connector
 
 import sys
 
-# total arguments
-database_methods.check_arguments(sys.argv)
-n = len(sys.argv)
-print("Total arguments passed:", n)
-
-# Arguments passed
-print("\nName of Python script:", sys.argv[0])
-
-print("\nArguments passed:", end=" ")
-for i in range(1, n):
-  print(sys.argv[i], end=" ")
-
-print("\n")
+# check_arguments ensures that args are formatted correctly and stores the correct action in to-do
+todo = database_methods.check_arguments(sys.argv)
 
 # csv file name
 filename = "test.csv"
