@@ -1,7 +1,7 @@
+# TODO - implement check_content_type everywhere
 import csv
 
 import mysql.connector
-# TODO - if module doesn't exist/can't fetch from database (update, remove, show) then throw an error
 
 
 # ensures arguments are passed in correctly
@@ -116,9 +116,55 @@ def help_message():
 
 
 # insert a new module into the database
-# TODO
-def add_module(cat):
-    print("am")
+def add_module(filename):
+    rows = read(filename)
+
+    if len(rows) < 3:
+        exit("File not correctly formatted")
+
+    title = rows[0]
+    image = rows[1]
+    desc = rows[2]
+
+    if title[0] != "module_title" or image[0] != "module_image" or desc[0] != "module_desc":
+        exit("File not correctly formatted")
+
+    if title[1] == "" or desc[1] == "":
+        exit("File not correctly formatted")
+
+    if title[2] != "" or image[2] != "" or desc[2] != "":
+        exit("File not correctly formatted")
+
+    mydb = mysql.connector.connect(
+        host="34.69.95.10",
+        user="root",
+        passwd="PAGLIndia",
+        database="pagl_india"
+    )
+
+    mycursor = mydb.cursor()
+
+    sql = "INSERT INTO modules (module_title, module_image, module_desc) values (%s, %s, %s)"
+    val = (title[1], image[1], desc[1])
+    mycursor.execute(sql, val)
+
+    module_id = mycursor.lastrowid
+
+    row = 3
+    data_inserted = 0
+
+    while row < len(rows):
+        data = rows[row]
+        if check_content_type(data[0]):
+            sql = "INSERT INTO module_data (parent_module, content_type, content, text) values (%s, %s, %s, %s)"
+            val = (module_id, data[0], data[1], data[2])
+            mycursor.execute(sql, val)
+            data_inserted += mycursor.rowcount
+        row += 1
+
+    mydb.commit()
+
+    print ("1 module with module_id = %d and %d data inserted" % (module_id, data_inserted))
 
 
 # insert new data into an existing module in the database
@@ -165,6 +211,9 @@ def remove_module(module_id):
 
     mydb.commit()
 
+    if mycursor.rowcount == 0:
+        exit("Module could not be found")
+
     print(mycursor.rowcount, "module removed.")
 
 
@@ -185,6 +234,9 @@ def remove_data(data_id):
 
     mydb.commit()
 
+    if mycursor.rowcount == 0:
+        exit("Data could not be found")
+
     print(mycursor.rowcount, " data removed.")
 
 
@@ -204,6 +256,9 @@ def show_module(module_id):
     mycursor.execute(sql, val)
 
     myresult = mycursor.fetchone()
+
+    if mycursor.rowcount == 0:
+        exit("Module could not be found")
 
     print("Module %d:\n" % myresult[0])
     print("   Module title: %s\n" % myresult[1])
@@ -238,6 +293,9 @@ def show_all():
 
     myresult = mycursor.fetchall()
 
+    if mycursor.rowcount == 0:
+        exit("Modules could not be found")
+
     for module in myresult:
         print("Module %d:\n" % module[0])
         print("   Module title: %s\n" % module[1])
@@ -246,10 +304,40 @@ def show_all():
 
 
 # update module with given input
-# TODO
 def update_module(module_id, filename):
     rows = read(filename)
-    print("um")
+
+    if len(rows) > 1:
+        exit("Can only update 1 module at a time")
+
+    row = rows[0]
+
+    if len(row) > 3 or row[2] != "":
+        exit("Can only update 1 field of a module at a time")
+
+    if row[0] != "module_title" and row[0] != "module_image" and row[0] != "module_desc":
+        exit("Cannot use field '%s'" % row[0])
+
+    mydb = mysql.connector.connect(
+        host="34.69.95.10",
+        user="root",
+        passwd="PAGLIndia",
+        database="pagl_india"
+    )
+
+    mycursor = mydb.cursor()
+
+    sql = "UPDATE modules SET %s" % row[0]
+    sql += " = %s WHERE module_id = %s"
+    val = (row[1], module_id)
+    mycursor.execute(sql, val)
+
+    mydb.commit()
+
+    if mycursor.rowcount == 0:
+        exit("Module could not be found or no change was made")
+
+    print(mycursor.rowcount, "data updated.")
 
 
 # update data with given input
@@ -271,10 +359,27 @@ def update_data(data_id, filename):
 
     row = rows[0]
 
-    sql = "UPDATE module_data SET content_type = %s, content = %s, text = %s WHERE data_id = %s"
-    val = (row[0], row[1], row[2], data_id)
-    mycursor.execute(sql, val)
+    if check_content_type(row[0]):
+        sql = "UPDATE module_data SET content_type = %s, content = %s, text = %s WHERE data_id = %s"
+        val = (row[0], row[1], row[2], data_id)
+        mycursor.execute(sql, val)
+    else:
+        exit()
 
     mydb.commit()
 
+    if mycursor.rowcount == 0:
+        exit("Data could not be found or no change was made")
+
     print(mycursor.rowcount, "data updated.")
+
+
+# checks to ensure that the content_type is valid
+def check_content_type(content_type):
+    if content_type != "text" and content_type != "image" and content_type != "video" and content_type != "header":
+        print("Cannot use type '%s'" % content_type)
+        return False
+    else:
+        return True
+
+
