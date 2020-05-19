@@ -1,4 +1,3 @@
-# TODO - implement check_content_type everywhere
 import csv
 
 import mysql.connector
@@ -110,9 +109,19 @@ def check_fields(fields):
 
 
 # prints help message in console
-# TODO
 def help_message():
-    print("dog")
+    print("Usage: python3 database_interface.py [options...]\n"
+          "-h, help   Display this help message\n"
+          "-sa, show_all   Display information about all modules\n"
+          "-sm, show_module <module id>   Show module information and all data associated with that module\n"
+          "-am, add_module <module csv>   Add module and associated data from csv file to database\n"
+          "-ad, add_data <data csv>   Add data from csv file to database\n"
+          "-rm, remove_module <module id>   Remove specified module and associated data from the database\n"
+          "-rd, remove_data <data id>   Remove specified data from the database\n"
+          "-um, update_module <module id> <module csv>   Update module using information from the csv file\n"
+          "-ud, update_data <data id> <data csv> Update data using information from the csv file\n"
+          "For more information, email rosaleenmao@gmail.com\n"
+          "Or visit https://docs.google.com/document/d/1noidIHme3n10b-HBqlW-DBC4zyL78rEgp9UmSkqikIE/edit?usp=sharing")
 
 
 # insert a new module into the database
@@ -184,10 +193,11 @@ def add_data(module_id, filename):
     data_inserted = 0
 
     for row in rows:
-        sql = "INSERT INTO module_data (parent_module, content_type, content, text) values (%s, %s, %s, %s)"
-        val = (module_id, row[0], row[1], row[2])
-        mycursor.execute(sql, val)
-        data_inserted += mycursor.rowcount
+        if check_content_type(row[0]):
+            sql = "INSERT INTO module_data (parent_module, content_type, content, text) values (%s, %s, %s, %s)"
+            val = (module_id, row[0], row[1], row[2])
+            mycursor.execute(sql, val)
+            data_inserted += mycursor.rowcount
 
     mydb.commit()
 
@@ -376,7 +386,8 @@ def update_data(data_id, filename):
 
 # checks to ensure that the content_type is valid
 def check_content_type(content_type):
-    if content_type != "text" and content_type != "image" and content_type != "video" and content_type != "header":
+    if content_type != "text" and content_type != "image" and content_type != "video" and content_type != "header"\
+            and content_type != "quiz":
         print("Cannot use type '%s'" % content_type)
         return False
     else:
