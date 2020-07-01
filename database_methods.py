@@ -387,7 +387,7 @@ def update_data(data_id, filename):
 # checks to ensure that the content_type is valid
 def check_content_type(content_type):
     if content_type != "text" and content_type != "image" and content_type != "video" and content_type != "header"\
-            and content_type != "quiz":
+            and content_type != "quiz" and content_type != "list":
         print("Cannot use type '%s'" % content_type)
         return False
     else:
